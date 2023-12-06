@@ -6,6 +6,7 @@ module Graphql.Http exposing
     , send, sendWithTracker, toTask
     , mapError, discardParsedErrorData, withSimpleHttpError
     , parseableErrorAsSuccess
+    , withDirectives
     )
 
 {-| Send requests to your GraphQL endpoint. See [this live code demo](https://rebrand.ly/graphqelm)
@@ -60,6 +61,7 @@ There are 3 possible strategies to handle GraphQL errors.
 
 -}
 
+import Graphql.Directive as Directive exposing (Directive)
 import Graphql.Document as Document
 import Graphql.Http.GraphqlError as GraphqlError
 import Graphql.Http.QueryHelper as QueryHelper
@@ -85,6 +87,7 @@ type Request decodesTo
         , withCredentials : Bool
         , queryParams : List ( String, String )
         , operationName : Maybe String
+        , directives : List Directive
         }
 
 
@@ -124,6 +127,7 @@ queryRequest baseUrl query =
     , details = Query Nothing query
     , queryParams = []
     , operationName = Nothing
+    , directives = []
     }
         |> Request
 
@@ -155,6 +159,7 @@ queryRequestWithHttpGet baseUrl requestMethod query =
     , details = Query (Just requestMethod) query
     , queryParams = []
     , operationName = Nothing
+    , directives = []
     }
         |> Request
 
@@ -172,6 +177,7 @@ mutationRequest baseUrl mutationSelectionSet =
     , withCredentials = False
     , queryParams = []
     , operationName = Nothing
+    , directives = []
     }
         |> Request
 
@@ -191,6 +197,11 @@ See <https://graphql.org/learn/queries/#operation-name>
 withOperationName : String -> Request decodesTo -> Request decodesTo
 withOperationName operationName (Request request) =
     Request { request | operationName = Just operationName }
+
+
+withDirectives : List Directive -> Request decodesTo -> Request decodesTo
+withDirectives directives (Request request) =
+    Request { request | directives = directives }
 
 
 {-| An alias for the default kind of Error. See the `RawError` for the full
@@ -567,6 +578,7 @@ toReadyRequest (Request request) =
                         )
                         request.baseUrl
                         request.queryParams
+                        request.directives
                         request.operationName
                         querySelectionSet
             in
@@ -592,7 +604,7 @@ toReadyRequest (Request request) =
                             Document.serializeMutationWithOperationName operationName mutationSelectionSet
 
                         Nothing ->
-                            Document.serializeMutation mutationSelectionSet
+                            Document.serializeMutation request.directives mutationSelectionSet
             in
             { method = "POST"
             , headers = request.headers

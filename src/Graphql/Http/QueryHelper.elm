@@ -1,5 +1,6 @@
 module Graphql.Http.QueryHelper exposing (HttpMethod(..), build)
 
+import Graphql.Directive exposing (Directive)
 import Graphql.Document as Document
 import Graphql.Http.QueryParams as QueryParams
 import Graphql.Operation exposing (RootQuery)
@@ -29,8 +30,8 @@ maxLength =
     2000
 
 
-build : Maybe HttpMethod -> String -> List QueryParam -> Maybe String -> SelectionSet decodesTo RootQuery -> QueryRequest
-build forceMethod url queryParams maybeOperationName queryDocument =
+build : Maybe HttpMethod -> String -> List QueryParam -> List Directive -> Maybe String -> SelectionSet decodesTo RootQuery -> QueryRequest
+build forceMethod url queryParams directives maybeOperationName queryDocument =
     let
         ( serializedQueryForGetRequest, operationNameParamForGetRequest ) =
             case maybeOperationName of
@@ -57,7 +58,7 @@ build forceMethod url queryParams maybeOperationName queryDocument =
                         )
 
                     Nothing ->
-                        ( Document.serializeQuery queryDocument, [] )
+                        ( Document.serializeQuery directives queryDocument, [] )
         in
         { method = Post
         , url = QueryParams.urlWithQueryParams queryParams url
