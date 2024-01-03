@@ -12,6 +12,15 @@ export const introspectionQuery = `query IntrospectionQuery($includeDeprecated: 
       types {
         ...FullType
       }
+      directives {
+        name
+        description
+        isRepeatable
+        locations
+        args {
+          ...InputValue
+        }
+      }
     }
   }
 

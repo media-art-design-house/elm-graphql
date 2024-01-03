@@ -8,6 +8,8 @@ are helpful for debugging and demo purposes.
 
 -}
 
+import Graphql.Directive exposing (Directive(..))
+import Graphql.Document.Directive as Directive
 import Graphql.Document.Field as Field
 import Graphql.Operation exposing (RootMutation, RootQuery, RootSubscription)
 import Graphql.RawField exposing (RawField)
@@ -18,9 +20,9 @@ import String.Interpolate exposing (interpolate)
 
 {-| Serialize a query selection set into a string for a GraphQL endpoint.
 -}
-serializeQuery : SelectionSet decodesTo RootQuery -> String
-serializeQuery (SelectionSet fields decoder_) =
-    serialize "query" fields
+serializeQuery : List Directive -> SelectionSet decodesTo RootQuery -> String
+serializeQuery directives (SelectionSet fields decoder_) =
+    serialize "query" directives fields
 
 
 {-| Serialize a query selection set with an operation name into a string for a GraphQL endpoint.
@@ -48,9 +50,9 @@ serializeQueryForUrlWithOperationName operationName (SelectionSet fields decoder
 
 {-| Serialize a mutation selection set into a string for a GraphQL endpoint.
 -}
-serializeMutation : SelectionSet decodesTo RootMutation -> String
-serializeMutation (SelectionSet fields decoder_) =
-    serialize "mutation" fields
+serializeMutation : List Directive -> SelectionSet decodesTo RootMutation -> String
+serializeMutation directives (SelectionSet fields decoder_) =
+    serialize "mutation" directives fields
 
 
 {-| Serialize a mutation selection set with an operation name into a string for a GraphQL endpoint.
@@ -62,9 +64,9 @@ serializeMutationWithOperationName operationName (SelectionSet fields decoder_) 
 
 {-| Serialize a subscription selection set into a string for a GraphQL endpoint.
 -}
-serializeSubscription : SelectionSet decodesTo RootSubscription -> String
-serializeSubscription (SelectionSet fields decoder_) =
-    serialize "subscription" fields
+serializeSubscription : List Directive -> SelectionSet decodesTo RootSubscription -> String
+serializeSubscription directives (SelectionSet fields decoder_) =
+    serialize "subscription" directives fields
 
 
 {-| Decoder a response from the server. This low-level function shouldn't be needed
@@ -76,12 +78,12 @@ decoder (SelectionSet fields decoder_) =
     decoder_ |> Decode.field "data"
 
 
-serialize : String -> List RawField -> String
-serialize operationType queries =
-    interpolate """{0} {
-{1}
+serialize : String -> List Directive -> List RawField -> String
+serialize operationType directives queries =
+    interpolate """{0} {1} {
+{2}
 }"""
-        [ operationType, Field.serializeChildren (Just 0) queries ]
+        [ operationType, Directive.serialize directives, Field.serializeChildren (Just 0) queries ]
 
 
 serializeWithOperationName : String -> String -> List RawField -> String
